@@ -1,0 +1,20 @@
+# Optional: Render Blueprint — import repo → Render reads this file
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: watch-together-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build --workspace=packages/server
+    startCommand: npm run start --workspace=packages/server
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
