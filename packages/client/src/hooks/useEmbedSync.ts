@@ -21,7 +21,6 @@ interface UseEmbedSyncOptions {
   isHost: boolean;
   active: boolean;
   latency: number;
-  onSyncingChange?: (syncing: boolean) => void;
   onPlaybackNotify?: (isPlaying: boolean) => void;
 }
 
@@ -31,7 +30,6 @@ export function useEmbedSync({
   isHost,
   active,
   latency,
-  onSyncingChange,
   onPlaybackNotify,
 }: UseEmbedSyncOptions) {
   const isHostRef = useRef(isHost);
@@ -51,24 +49,20 @@ export function useEmbedSync({
     if (!ctrl || isHostRef.current) return;
 
     isApplyingRef.current = true;
-    onSyncingChange?.(true);
 
     const target = estimateTargetTime(data.currentTime, data.isPlaying, data.serverTime);
     const current = await resolveTime(ctrl.getCurrentTime());
 
-    if (forceSeek || Math.abs(current - target) > 2) {
-      ctrl.seek(target);
-    }
-
     if (data.isPlaying) ctrl.play();
     else ctrl.pause();
 
-    onPlaybackNotify?.(data.isPlaying);
+    if (forceSeek || Math.abs(current - target) > 2) {
+      ctrl.seek(target);
+    }
     setTimeout(() => {
       isApplyingRef.current = false;
-      onSyncingChange?.(false);
     }, 300);
-  }, [controllerRef, estimateTargetTime, onSyncingChange, onPlaybackNotify]);
+  }, [controllerRef, estimateTargetTime]);
 
   const emitPlay = useCallback(async () => {
     const ctrl = controllerRef.current;
@@ -98,10 +92,12 @@ export function useEmbedSync({
 
     const onPlay = (data: { currentTime: number; serverTime: number }) => {
       if (isHostRef.current) return;
+      onPlaybackNotify?.(true);
       void applyRemote({ ...data, isPlaying: true }, true);
     };
     const onPause = (data: { currentTime: number; serverTime: number }) => {
       if (isHostRef.current) return;
+      onPlaybackNotify?.(false);
       void applyRemote({ ...data, isPlaying: false }, true);
     };
     const onSeek = (data: { currentTime: number; serverTime: number }) => {

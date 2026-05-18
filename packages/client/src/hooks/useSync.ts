@@ -35,7 +35,6 @@ interface UseSyncOptions {
     type: 'url' | 'local',
     meta?: { provider?: string; embedId?: string; embedUrl?: string },
   ) => void;
-  onSyncingChange?: (syncing: boolean) => void;
   onPlaybackNotify?: (isPlaying: boolean) => void;
   onVideoLoadedNotify?: (name: string) => void;
 }
@@ -58,7 +57,6 @@ export function useSync({
   videoUrl,
   latency,
   onVideoLoad,
-  onSyncingChange,
   onPlaybackNotify,
   onVideoLoadedNotify,
 }: UseSyncOptions) {
@@ -93,7 +91,6 @@ export function useSync({
 
     isApplyingRemoteRef.current = true;
     setRemoteGuard();
-    onSyncingChange?.(true);
 
     const targetTime = estimateTargetTime(data.currentTime, data.isPlaying, data.serverTime);
     const drift = Math.abs(video.currentTime - targetTime);
@@ -116,9 +113,8 @@ export function useSync({
 
     requestAnimationFrame(() => {
       isApplyingRemoteRef.current = false;
-      onSyncingChange?.(false);
     });
-  }, [estimateTargetTime, onSyncingChange, setRemoteGuard]);
+  }, [estimateTargetTime, setRemoteGuard]);
 
   // ── Host emits ─────────────────────────────────────────────────────────────
 
@@ -231,7 +227,7 @@ export function useSync({
     socket.on(EVENTS.VIDEO_SYNC, onVideoSync);
 
     let interval: ReturnType<typeof setInterval> | undefined;
-    if (!isHost) {
+    if (!isHost && videoUrl) {
       requestSync();
       interval = setInterval(requestSync, SYNC_INTERVAL_MS);
     }

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, MessageSquare,
   Headphones, LogOut, Copy, Check, Link, Film, Bot,
-  Wifi, WifiOff, Crown, Loader2, RefreshCw,
+  Wifi, WifiOff, Crown, Loader2,
   Maximize, Minimize, Volume2, VolumeX,
 } from 'lucide-react';
 import { useRoomStore } from '../store/roomStore';
@@ -106,7 +106,6 @@ export function Room() {
   const embedControllerRef = useRef<EmbedPlayerController | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isTheater, setIsTheater] = useState(false);
@@ -125,7 +124,6 @@ export function Room() {
     isHost,
     videoUrl: showDirectVideo ? videoUrl : null,
     latency,
-    onSyncingChange: setIsSyncing,
     onVideoLoad: (url, name, _type, meta) => {
       const parsed = meta?.provider
         ? {
@@ -157,7 +155,6 @@ export function Room() {
     isHost,
     active: !!playback && isEmbedSyncable,
     latency,
-    onSyncingChange: setIsSyncing,
     onPlaybackNotify: (playing) => {
       if (!isHost) notifyPlayback(playing);
     },
@@ -563,7 +560,7 @@ export function Room() {
               ) : isEmbedProvider(playback.provider) ? (
                 <EmbedPlayer
                   ref={embedControllerRef}
-                  source={playback}
+                  source={{ ...playback, isPlaying }}
                   isHost={isHost}
                   onPlay={() => { if (isHost && isEmbedSyncable) void embedSync.emitPlay(); }}
                   onPause={() => { if (isHost && isEmbedSyncable) void embedSync.emitPause(); }}
@@ -578,7 +575,7 @@ export function Room() {
 
               {/* Loading overlay */}
               <AnimatePresence>
-                {(isVideoLoading || isSyncing) && (
+                {isVideoLoading && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -587,7 +584,7 @@ export function Room() {
                   >
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/70 text-white/80 text-sm">
                       <Loader2 className="w-4 h-4 animate-spin text-accent" />
-                      {isSyncing ? 'Syncing with host…' : 'Loading video…'}
+                      Loading video…
                     </div>
                   </motion.div>
                 )}
@@ -653,12 +650,8 @@ export function Room() {
                   className="absolute top-4 left-1/2 -translate-x-1/2 z-20"
                 >
                   <motion.div className="flex items-center gap-1.5 bg-black/60 text-white/70 text-xs px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
-                    {isSyncing ? (
-                      <RefreshCw className="w-3 h-3 animate-spin text-accent" />
-                    ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    )}
-                    {isSyncing ? 'Syncing…' : 'Following host'}
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                    Following host
                   </motion.div>
                 </motion.div>
               )}
